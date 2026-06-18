@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DataPlug - Instant VTU Services</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--primary:#6C63FF;--primary-dark:#5A52D5;--secondary:#FF6584;--bg:#0F0F1A;--card:#1A1A2E;--card2:#16213E;--text:#E8E8E8;--text2:#A0A0B0;--success:#00C853;--danger:#FF5252;--warning:#FFD600;--border:rgba(255,255,255,0.06);--radius:16px;--shadow:0 8px 32px rgba(0,0,0,0.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--primary);border-radius:4px}
+.toast-container{position:fixed;top:20px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:10px}
+.toast{padding:14px 24px;border-radius:12px;color:#fff;font-size:14px;font-weight:500;animation:slideIn .3s ease;backdrop-filter:blur(20px);display:flex;align-items:center;gap:10px;max-width:360px;box-shadow:var(--shadow)}
+.toast.success{background:rgba(0,200,83,0.9)}.toast.error{background:rgba(255,82,82,0.9)}.toast.info{background:rgba(108,99,255,0.9)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:5000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.active{display:flex}
+.modal{background:var(--card);border-radius:var(--radius);padding:30px;max-width:460px;width:100%;max-height:90vh;overflow-y:auto;animation:modalIn .3s ease;border:1px solid var(--border)}
+@keyframes modalIn{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
+.modal h2{font-size:22px;margin-bottom:20px;text-align:center}
+.modal .close-modal{position:absolute;top:15px;right:20px;font-size:24px;cursor:pointer;color:var(--text2)}
+.input-group{margin-bottom:16px}
+.input-group label{display:block;font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.input-group input,.input-group select,.input-group textarea{width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none;transition:.3s}
+.input-group input:focus,.input-group select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(108,99,255,0.2)}
+.input-group select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23A0A0B0' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.input-group select option{background:var(--card);color:var(--text)}
+.password-wrapper{position:relative}
+.password-wrapper .toggle-pw{position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text2);font-size:18px;background:none;border:none}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:.3s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(108,99,255,0.4)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-sm{padding:8px 16px;font-size:13px;width:auto;border-radius:8px}
+.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* AUTH PAGES */
+.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,var(--bg) 0%,#1a1a3e 100%)}
+.auth-card{background:var(--card);border-radius:var(--radius);padding:40px 30px;max-width:420px;width:100%;border:1px solid var(--border);box-shadow:var(--shadow)}
+.auth-card .logo{text-align:center;margin-bottom:30px}
+.auth-card .logo h1{font-size:28px;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer;user-select:none}
+.auth-card .logo p{color:var(--text2);font-size:13px;margin-top:4px}
+.auth-card .tabs{display:flex;gap:0;margin-bottom:25px;background:var(--bg);border-radius:10px;padding:4px}
+.auth-card .tabs button{flex:1;padding:10px;border:none;background:none;color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;border-radius:8px;transition:.3s}
+.auth-card .tabs button.active{background:var(--primary);color:#fff}
+.auth-card .divider{text-align:center;color:var(--text2);font-size:13px;margin:16px 0;position:relative}
+.auth-card .switch-link{text-align:center;margin-top:16px;font-size:13px;color:var(--text2)}
+.auth-card .switch-link a{color:var(--primary);cursor:pointer;text-decoration:none;font-weight:600}
+
+/* MAIN APP */
+.app-container{display:none;min-height:100vh;padding-bottom:80px}
+.header{background:var(--card);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+.header .brand{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer;user-select:none}
+.header .user-menu{display:flex;align-items:center;gap:12px}
+.header .user-menu .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer}
+.header .user-menu .notif-bell{font-size:20px;cursor:pointer;position:relative}
+
+/* WALLET CARD */
+.wallet-section{padding:20px}
+.wallet-card{background:linear-gradient(135deg,#6C63FF 0%,#4A45B2 50%,#FF6584 100%);border-radius:20px;padding:28px;color:#fff;position:relative;overflow:hidden}
+.wallet-card::before{content:'';position:absolute;top:-50%;right:-50%;width:100%;height:100%;background:radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 70%);border-radius:50%}
+.wallet-card .balance-label{font-size:13px;opacity:.8;margin-bottom:4px}
+.wallet-card .balance-amount{font-size:32px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.wallet-card .balance-amount .eye-toggle{cursor:pointer;font-size:18px;opacity:.8}
+.wallet-card .wallet-actions{display:flex;gap:10px;margin-top:16px}
+.wallet-card .wallet-actions button{flex:1;padding:10px;border:none;border-radius:10px;background:rgba(255,255,255,0.2);color:#fff;font-size:13px;font-weight:600;cursor:pointer;backdrop-filter:blur(10px);transition:.3s}
+.wallet-card .wallet-actions button:hover{background:rgba(255,255,255,0.3)}
+
+/* QUICK SERVICES */
+.services-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 20px;margin-top:20px}
+.service-item{background:var(--card);border-radius:14px;padding:16px 8px;text-align:center;cursor:pointer;transition:.3s;border:1px solid var(--border)}
+.service-item:hover{border-color:var(--primary);transform:translateY(-3px)}
+.service-item .icon{font-size:28px;margin-bottom:8px}
+.service-item .label{font-size:11px;color:var(--text2);font-weight:500}
+
+/* SECTIONS */
+.section-title{padding:20px 20px 10px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.section-title .see-all{font-size:13px;color:var(--primary);cursor:pointer}
+
+/* RECENT TRANSACTIONS */
+.txn-list{padding:0 20px}
+.txn-item{display:flex;align-items:center;gap:14px;padding:14px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--border)}
+.txn-item .txn-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.txn-item .txn-icon.success{background:rgba(0,200,83,0.15);color:var(--success)}
+.txn-item .txn-icon.failed{background:rgba(255,82,82,0.15);color:var(--danger)}
+.txn-item .txn-icon.pending{background:rgba(255,214,0,0.15);color:var(--warning)}
+.txn-item .txn-info{flex:1}
+.txn-item .txn-info .txn-title{font-size:14px;font-weight:500}
+.txn-item .txn-info .txn-date{font-size:12px;color:var(--text2)}
+.txn-item .txn-amount{font-weight:600;font-size:14px}
+.txn-item .txn-amount.debit{color:var(--danger)}
+.txn-item .txn-amount.credit{color:var(--success)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;padding:8px 0;z-index:100;backdrop-filter:blur(20px)}
+.bottom-nav .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;cursor:pointer;color:var(--text2);transition:.3s;font-size:10px;font-weight:500}
+.bottom-nav .nav-item.active{color:var(--primary)}
+.bottom-nav .nav-item .nav-icon{font-size:22px}
+
+/* SERVICE PAGES */
+.service-page{display:none;padding:20px}
+.service-page.active{display:block}
+.service-page .page-header{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.service-page .page-header .back-btn{width:36px;height:36px;border-radius:10px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text)}
+.service-page .page-header h2{font-size:20px}
+
+/* PAGES CONTAINER */
+.page{display:none}.page.active{display:block}
+
+/* ADMIN PANEL */
+.admin-panel{display:none;padding:20px}
+.admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.admin-tabs button{padding:8px 16px;border:1px solid var(--border);background:var(--card);color:var(--text2);border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;transition:.3s}
+.admin-tabs button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.admin-section{display:none}.admin-section.active{display:block}
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border)}
+.stat-card .stat-value{font-size:22px;font-weight:700;margin-top:4px}
+.stat-card .stat-label{font-size:12px;color:var(--text2)}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th,.data-table td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table th{color:var(--text2);font-weight:500;font-size:12px}
+.data-table td{color:var(--text)}
+.search-bar{width:100%;padding:10px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none;margin-bottom:16px}
+
+/* RECEIPT */
+.receipt{background:#fff;color:#333;border-radius:12px;padding:24px;max-width:360px;margin:0 auto}
+.receipt h3{text-align:center;margin-bottom:16px;color:var(--primary)}
+.receipt .receipt-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:13px}
+.receipt .receipt-row:last-child{border:none}
+
+/* INFO PAGES */
+.info-page{padding:20px;line-height:1.8;font-size:14px;color:var(--text2)}
+.info-page h2{color:var(--text);margin-bottom:16px;font-size:22px}
+.info-page h3{color:var(--text);margin:20px 0 8px;font-size:16px}
+.info-page p{margin-bottom:12px}
+.faq-item{background:var(--card);border-radius:12px;padding:16px;margin-bottom:10px;cursor:pointer;border:1px solid var(--border)}
+.faq-item .faq-q{font-weight:600;color:var(--text);display:flex;justify-content:space-between;align-items:center}
+.faq-item .faq-a{display:none;margin-top:10px;color:var(--text2);font-size:13px;line-height:1.7}
+.faq-item.open .faq-a{display:block}
+
+/* RESPONSIVE */
+@media(max-width:380px){.services-grid{grid-template-columns:repeat(3,1fr)}.wallet-card .balance-amount{font-size:26px}}
+@media(min-width:768px){.services-grid{grid-template-columns:repeat(4,1fr);max-width:600px;margin:20px auto 0}.wallet-section{max-width:600px;margin:0 auto}.txn-list{max-width:600px;margin:0 auto}.service-page{max-width:600px;margin:0 auto}}
+
+/* VOUCHER PRINT STYLES */
+.voucher-preview{background:#fff;color:#000;padding:20px;border-radius:12px;margin-top:16px}
+.voucher-card{border:2px dashed #333;padding:12px;margin:6px;display:inline-block;width:calc(50% - 16px);text-align:center;font-size:11px;vertical-align:top}
+.voucher-card .v-network{font-weight:700;font-size:14px;margin-bottom:4px}
+.voucher-card .v-pin{font-size:16px;font-weight:700;letter-spacing:2px;margin:8px 0;color:var(--primary)}
+.voucher-card .v-serial{font-size:10px;color:#666}
+.voucher-card .v-value{font-size:13px;font-weight:600;margin-top:4px}
+.voucher-card .v-brand{font-size:9px;color:#999;margin-top:6px}
+.voucher-card .v-dial{font-size:10px;color:#444;margin-top:4px}
+
+.loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,15,26,0.9);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.loading-overlay.active{display:flex}
+.loading-overlay .spinner-lg{width:50px;height:50px;border:3px solid rgba(108,99,255,0.2);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+.loading-overlay p{color:var(--text2);font-size:14px}
+.badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.badge-success{background:rgba(0,200,83,0.15);color:var(--success)}
+.badge-danger{background:rgba(255,82,82,0.15);color:var(--danger)}
+.badge-warning{background:rgba(255,214,0,0.15);color:var(--warning)}
+.badge-info{background:rgba(108,99,255,0.15);color:var(--primary)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+.tab-content{display:none}.tab-content.active{display:block}
+</style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner-lg"></div><p id="loadingText">Processing...</p></div>
+
+<!-- ===== AUTH PAGE ===== -->
+<div class="auth-page" id="authPage">
+<div class="auth-card">
+<div class="logo">
+<h1 id="authLogo">⚡ DataPlug</h1>
+<p>Instant VTU & Bill Payments</p>
+</div>
+<div id="authForms">
+<!-- LOGIN -->
+<div id="loginForm">
+<div class="input-group">
+<label>Email or Phone</label>
+<input type="text" id="loginEmail" placeholder="Enter email or phone">
+</div>
+<div class="input-group">
+<label>Password</label>
+<div class="password-wrapper">
+<input type="password" id="loginPassword" placeholder="Enter password">
+<button class="toggle-pw" onclick="togglePW('loginPassword',this)">👁️</button>
+</div>
+</div>
+<button class="btn btn-primary" onclick="handleLogin()" id="loginBtn">Sign In</button>
+<div class="switch-link">Don't have an account? <a onclick="showRegister()">Sign Up</a></div>
+<div class="switch-link" style="margin-top:8px"><a onclick="showForgotPassword()">Forgot Password?</a></div>
+</div>
+<!-- REGISTER -->
+<div id="registerForm" style="display:none">
+<div class="input-group">
+<label>Full Name</label>
+<input type="text" id="regName" placeholder="Enter full name">
+</div>
+<div class="input-group">
+<label>Email</label>
+<input type="email" id="regEmail" placeholder="Enter email">
+</div>
+<div class="input-group">
+<label>Phone Number</label>
+<input type="tel" id="regPhone" placeholder="e.g 08012345678">
+</div>
+<div class="input-group">
+<label>Password</label>
+<div class="password-wrapper">
+<input type="password" id="regPassword" placeholder="Min 6 characters">
+<button class="toggle-pw" onclick="togglePW('regPassword',this)">👁️</button>
+</div>
+</div>
+<div class="input-group">
+<label>Referral Code (Optional)</label>
+<input type="text" id="regReferral" placeholder="Enter referral code">
+</div>
+<button class="btn btn-primary" onclick="handleRegister()" id="regBtn">Create Account</button>
+<div class="switch-link">Already have an account? <a onclick="showLogin()">Sign In</a></div>
+</div>
+<!-- FORGOT PASSWORD -->
+<div id="forgotForm" style="display:none">
+<div class="input-group">
+<label>Email Address</label>
+<input type="email" id="forgotEmail" placeholder="Enter your email">
+</div>
+<button class="btn btn-primary" onclick="handleForgotPassword()">Reset Password</button>
+<div class="switch-link"><a onclick="showLogin()">Back to Sign In</a></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div class="app-container" id="appContainer">
+<!-- HEADER -->
+<div class="header">
+<div class="brand" id="appBrand">⚡ DataPlug</div>
+<div class="user-menu">
+<span class="notif-bell" onclick="showPage('transactions')">🔔</span>
+<div class="avatar" id="userAvatar" onclick="showProfileMenu()">U</div>
+</div>
+</div>
+
+<!-- === HOME PAGE === -->
+<div class="page active" id="homePage">
+<div class="wallet-section">
+<div class="wallet-card">
+<div class="balance-label">Wallet Balance</div>
+<div class="balance-amount">
+<span id="walletBalance">₦0.00</span>
+<span class="eye-toggle" onclick="toggleBalance()">👁️</span>
+</div>
+<div class="wallet-actions">
+<button onclick="showFundWallet()">💳 Fund Wallet</button>
+<button onclick="showPage('transactions')">📋 History</button>
+</div>
+</div>
+</div>
+<div class="services-grid">
+<div class="service-item" onclick="showServicePage('data')"><div class="icon">📶</div><div class="label">Buy Data</div></div>
+<div class="service-item" onclick="showServicePage('airtime')"><div class="icon">📱</div><div class="label">Airtime</div></div>
+<div class="service-item" onclick="showServicePage('cable')"><div class="icon">📺</div><div class="label">Cable TV</div></div>
+<div class="service-item" onclick="showServicePage('electricity')"><div class="icon">💡</div><div class="label">Electricity</div></div>
+<div class="service-item" onclick="showServicePage('epin')"><div class="icon">🖨️</div><div class="label">Print RC</div></div>
+<div class="service-item" onclick="showPage('referral')"><div class="icon">👥</div><div class="label">Referral</div></div>
+<div class="service-item" onclick="openWhatsApp()"><div class="icon">💬</div><div class="label">Support</div></div>
+<div class="service-item" onclick="showPage('more')"><div class="icon">⚙️</div><div class="label">More</div></div>
+</div>
+<div class="section-title">Recent Activity <span class="see-all" onclick="showPage('transactions')">See All</span></div>
+<div class="txn-list" id="recentTxns">
+<div class="empty-state"><div class="empty-icon">📋</div><p>No recent transactions</p></div>
+</div>
+</div>
+
+<!-- === SERVICES PAGES === -->
+<!-- DATA PAGE -->
+<div class="page" id="dataPage">
+<div class="service-page active">
+<div class="page-header"><div class="back-btn" onclick="showPage('home')">←</div><h2>Buy Data Bundle</h2></div>
+<div class="input-group">
+<label>Network</label>
+<select id="dataNetwork" onchange="loadDataPlans()"><option value="">Select Network</option></select>
+</div>
+<div class="input-group">
+<label>Data Plan</label>
+<select id="dataPlan"><option value="">Select Plan</option></select>
+</div>
+<div class="input-group">
+<label>Phone Number</label>
+<input type="tel" id="dataPhone" placeholder="e.g 08012345678">
+</div>
+<div class="input-group">
+<label>Amount</label>
+<input type="text" id="dataAmount" readonly placeholder="Auto-filled">
+</div>
+<button class="btn btn-primary" onclick="buyData()" id="buyDataBtn">Buy Data</button>
+<div style="text-align:center;margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="loadNetworksFromAPI('data')" style="width:auto;margin:0 auto">🔄 Load Plans from API</button></div>
+</div>
+</div>
+
+<!-- AIRTIME PAGE -->
+<div class="page" id="airtimePage">
+<div class="service-page active">
+<div class="page-header"><div class="back-btn" onclick="showPage('home')">←</div><h2>Buy Airtime</h2></div>
+<div class="input-group">
+<label>Network</label>
+<select id="airtimeNetwork"><option value="">Select Network</option></select>
+</div>
+<div class="input-group">
+<label>Phone Number</label>
+<input type="tel" id="airtimePhone" placeholder="e.g 08012345678">
+</div>
+<div class="input-group">
+<label>Amount (₦)</label>
+<input type="number" id="airtimeAmount" placeholder="e.g 500" min="50">
+</div>
+<button class="btn btn-primary" onclick="buyAirtime()" id="buyAirtimeBtn">Buy Airtime</button>
+<div style="text-align:center;margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="loadNetworksFromAPI('airtime')" style="width:auto;margin:0 auto">🔄 Load Networks from API</button></div>
+</div>
+</div>
+
+<!-- CABLE TV PAGE -->
+<div class="page" id="cablePage">
+<div class="service-page active">
+<div class="page-header"><div class="back-btn" onclick="showPage('home')">←</div><h2>Cable TV Subscription</h2></div>
+<div class="input-group">
+<label>Cable Provider</label>
+<select id="cableProvider" onchange="loadCablePackages()"><option value="">Select Provider</option></select>
+</div>
+<div class="input-group">
+<label>Package</label>
+<select id="cablePackage"><option value="">Select Package</option></select>
+</div>
+<div class="input-group">
+<label>Smart Card / IUC Number</label>
+<input type="text" id="cableSmartCard" placeholder="Enter smart card number">
+</div>
+<div class="input-group">
+<label>Amount</label>
+<input type="text" id="cableAmount" readonly placeholder="Auto-filled">
+</div>
+<button class="btn btn-primary" onclick="buyCable()" id="buyCableBtn">Subscribe Now</button>
+<div style="text-align:center;margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="loadNetworksFromAPI('cable')" style="width:auto;margin:0 auto">🔄 Load Packages from API</button></div>
+</div>
+</div>
+
+<!-- ELECTRICITY PAGE -->
+<div class="page" id="electricityPage">
+<div class="service-page active">
+<div class="page-header"><div class="back-btn" onclick="showPage('home')">←</div><h2>Electricity Bill</h2></div>
+<div class="input-group">
+<label>Disco / Provider</label>
+<select id="elecDisco"><option value="">Select Disco</option></select>
+</div>
+<div class="input-group">
+<label>Meter Type</label>
+<select id="elecMeterType"><option value="prepaid">Prepaid</option><option value="postpaid">Postpaid</option></select>
+</div>
+<div class="input-group">
+<label>Meter Number</label>
+<input type="text" id="elecMeterNo" placeholder="Enter meter number">
+</div>
+<div class="input-group">
+<label>Amount (₦)</label>
+<input type="number" id="elecAmount" placeholder="e.g 5000" min="500">
+</div>
+<button class="btn btn-primary" onclick="buyElectricity()" id="buyElecBtn">Pay Now</button>
+<div style="text-align:center;margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="loadNetworksFromAPI('electricity')" style="width:auto;margin:0 auto">🔄 Load Discos from API</button></div>
+</div>
+</div>
+
+<!-- E-PIN / RECHARGE CARD PAGE -->
+<div class="page" id="epinPage">
+<div class="service-page active">
+<div class="page-header"><div class="back-btn" onclick="showPage('home')">←</div><h2>Print Recharge Card</h2></div>
+<div class="input-group">
+<label>Network</label>
+<select id="epinNetwork"><option value="">Select Network</option><option value="01">MTN</option><option value="02">GLO</option><option value="04">Airtel</option></select>
+</div>
+<div class="input-group">
+<label>Value</label>
+<select id="epinValue"><option value="100">₦100</option><option value="200">₦200</option><option value="500">₦500</option><option value="1000">₦1000</option></select>
+</div>
+<div class="input-group">
+<label>Quantity</label>
+<input type="number" id="epinQty" value="5" min="1" max="50" placeholder="Number of PINs">
+</div>
+<div class="input-group">
+<label>Business/Brand Name on Voucher</label>
+<input type="text" id="epinBrand" placeholder="Leave blank for DataPlug">
+</div>
+<button class="btn btn-primary" onclick="generateEPIN()" id="epinBtn">Generate & Print</button>
+<div id="epinResults" style="margin-top:20px"></div>
+</div>
+</div>
+
+<!-- TRANSACTIONS PAGE -->
+<div class="page" id="transactionsPage">
+<div class="service-page active">
+<div class="page-header"><div class="back-btn" onclick="showPage('home')">←</div><h2>Transactions</h2></div>
+<input class="search-bar" type="text" placeholder="🔍 Search transactions..." oninput="filterTransactions(this.value)">
+<div id="allTxnList">
+<div class="empty-state"><div class="empty-icon">📋</div><p>No transactions yet</p></div>
+</div>
+</div>
+</div>
+
+<!-- REFERRAL PAGE -->
+<div class="page" id="referralPage">
+<div class="service-page active">
+<div class="page-header"><div class="back-btn" onclick="showPage('home')">←</div><h2>Referral Program</h2></div>
+<div style="background:var(--card);border-radius:12px;padding:20px;border:1px solid var(--border);text-align:center">
+<p style="font-size:14px;color:var(--text2);margin-bottom:10px">Your Referral Code</p>
+<h2 id="myReferralCode" style="font-size:28px;letter-spacing:3px;color:var(--primary);margin-bottom:16px">---</h2>
+<button class="btn btn-secondary btn-sm" onclick="copyReferralCode()" style="margin:0 auto">📋 Copy Code</button>
+<div style="margin-top:20px;text-align:left">
+<p style="font-size:13px;color:var(--text2)">Total Referrals: <strong id="totalReferrals" style="color:var(--text)">0</strong></p>
+<p style="font-size:13px;color:var(--text2);margin-top:6px">Bonus Earned: <strong id="referralBonus" style="color:var(--success)">₦0</strong></p>
+<p style="font-size:13px;color:var(--text2);margin-top:6px">Points per Referral: <strong id="referralPoints" style="color:var(--primary)">₦0</strong></p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- MORE PAGE -->
+<div class="page" id="morePage">
+<div class="service-page active">
+<div class="page-header"><div class="back-btn" onclick="showPage('home')">←</div><h2>More</h2></div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div class="txn-item" onclick="showPage('about')" style="cursor:pointer"><div class="txn-icon" style="background:rgba(108,99,255,0.15)">ℹ️</div><div class="txn-info"><div class="txn-title">About Us</div></div><span style="color:var(--text2)">→</span></div>
+<div class="txn-item" onclick="showPage('terms')" style="cursor:pointer"><div class="txn-icon" style="background:rgba(108,99,255,0.15)">📄</div><div class="txn-info"><div class="txn-title">Terms of Service</div></div><span style="color:var(--text2)">→</span></div>
+<div class="txn-item" onclick="showPage('privacy')" style="cursor:pointer"><div class="txn-icon" style="background:rgba(108,99,255,0.15)">🔒</div><div class="txn-info"><div class="txn-title">Privacy Policy</div></div><span style="color:var(--text2)">→</span></div>
+<div class="txn-item" onclick="showPage('faq')" style="cursor:pointer"><div class="txn-icon" style="background:rgba(108,99,255,0.15)">❓</div><div class="txn-info"><div class="txn-title">FAQ</div></div><span style="color:var(--text2)">→</span></div>
+<div class="txn-item" onclick="openWhatsApp()" style="cursor:pointer"><div class="txn-icon" style="background:rgba(0,200,83,0.15)">💬</div><div class="txn-info"><div class="txn-title">WhatsApp Support</div></div><span style="color:var(--text2)">→</span></div>
+<div class="txn-item" onclick="handleLogout()" style="cursor:pointer"><div class="txn-icon" style="background:rgba(255,82,82,0.15)">🚪</div><div class="txn-info"><div class="txn-title" style="color:var(--danger)">Logout</div></div><span style="color:var(--text2)">→</span></div>
+</div>
+</div>
+</div>
+
+<!-- ABOUT PAGE -->
+<div class="page" id="aboutPage"><div class="service-page active"><div class="page-header"><div class="back-btn" onclick="showPage('more')">←</div><h2>About Us</h2></div><div class="info-page"><p>DataPlug is Nigeria's most reliable platform for instant VTU (Virtual Top-Up) services. We provide affordable data bundles, airtime, cable TV subscriptions, electricity bill payments, and recharge card printing services.</p><h3>Our Mission</h3><p>To deliver fast, secure, and affordable digital services to every Nigerian, making everyday utility payments hassle-free.</p><h3>Why Choose Us?</h3><p>✅ Instant delivery of all services<br>✅ Cheapest rates guaranteed<br>✅ Secure wallet system<br>✅ 24/7 customer support<br>✅ Automated refund for failed transactions<br>✅ Referral bonus program</p></div></div></div>
+
+<!-- TERMS PAGE -->
+<div class="page" id="termsPage"><div class="service-page active"><div class="page-header"><div class="back-btn" onclick="showPage('more')">←</div><h2>Terms of Service</h2></div><div class="info-page"><p>By using DataPlug, you agree to the following terms:</p><h3>1. Account</h3><p>You must provide accurate information during registration. You are responsible for maintaining your account security.</p><h3>2. Wallet</h3><p>Funds in your wallet are non-refundable but can be used for all services on the platform. Failed transactions are automatically refunded to your wallet.</p><h3>3. Services</h3><p>We act as an intermediary and rely on third-party networks. Delivery times may vary based on network conditions.</p><h3>4. Prohibited Use</h3><p>You shall not use our platform for any fraudulent, illegal, or unauthorized purposes.</p><h3>5. Limitation</h3><p>We are not liable for losses caused by network downtime or third-party service failures beyond our control.</p></div></div></div>
+
+<!-- PRIVACY PAGE -->
+<div class="page" id="privacyPage"><div class="service-page active"><div class="page-header"><div class="back-btn" onclick="showPage('more')">←</div><h2>Privacy Policy</h2></div><div class="info-page"><p>Your privacy is important to us.</p><h3>Data We Collect</h3><p>We collect your name, email, phone number, and transaction data to provide our services.</p><h3>How We Use It</h3><p>Your data is used solely for processing transactions, account management, and customer support.</p><h3>Data Security</h3><p>We use encryption and secure storage to protect your personal and financial information.</p><h3>Third Parties</h3><p>We do not sell your data. Information is shared only with payment processors and VTU providers to fulfill your orders.</p></div></div></div>
+
+<!-- FAQ PAGE -->
+<div class="page" id="faqPage"><div class="service-page active"><div class="page-header"><div class="back-btn" onclick="showPage('more')">←</div><h2>FAQ</h2></div>
+<div class="faq-item" onclick="this.classList.toggle('open')"><div class="faq-q">How do I fund my wallet? <span>+</span></div><div class="faq-a">Click on "Fund Wallet" from the dashboard. You'll be redirected to Paystack to complete payment. Your wallet updates automatically after successful payment.</div></div>
+<div class="faq-item" onclick="this.classList.toggle('open')"><div class="faq-q">What if my transaction fails? <span>+</span></div><div class="faq-a">If a transaction fails, your wallet is automatically refunded. If you don't see the refund within 5 minutes, contact our support via WhatsApp.</div></div>
+<div class="faq-item" onclick="this.classList.toggle('open')"><div class="faq-q">How does the referral program work? <span>+</span></div><div class="faq-a">Share your referral code with friends. When they register and fund their wallet, you earn bonus points that are credited to your wallet.</div></div>
+<div class="faq-item" onclick="this.classList.toggle('open')"><div class="faq-q">Are your prices the cheapest? <span>+</span></div><div class="faq-a">Yes! We offer some of the most competitive rates in Nigeria because we buy in bulk directly from network providers.</div></div>
+<div class="faq-item" onclick="this.classList.toggle('open')"><div class="faq-q">How do I print recharge cards? <span>+</span></div><div class="faq-a">Go to "Print RC" from the dashboard, select network, value, quantity, and optionally enter your business name. The vouchers are generated as downloadable PDF.</div></div>
+</div></div>
+
+<!-- ADMIN PAGE (Hidden) -->
+<div class="page" id="adminPage">
+<div class="service-page active">
+<div class="page-header"><div class="back-btn" onclick="showPage('home')">←</div><h2>⚙️ Admin Command Centre</h2></div>
+<div class="admin-tabs">
+<button class="active" onclick="showAdminTab('overview')">Overview</button>
+<button onclick="showAdminTab('users')">Users</button>
+<button onclick="showAdminTab('pricing')">Pricing</button>
+<button onclick="showAdminTab('apiconfig')">API Config</button>
+<button onclick="showAdminTab('settings')">Settings</button>
+<button onclick="showAdminTab('funduser')">Fund User</button>
+</div>
+
+<!-- Admin Overview -->
+<div class="admin-section active" id="adminOverview">
+<div class="stat-cards">
+<div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value" id="adminTotalUsers">0</div></div>
+<div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="adminRevenue">₦0</div></div>
+<div class="stat-card"><div class="stat-label">Today's Sales</div><div class="stat-value" id="adminTodaySales">₦0</div></div>
+<div class="stat-card"><div class="stat-label">Active Users</div><div class="stat-value" id="adminActiveUsers">0</div></div>
+</div>
+<h3 style="margin-bottom:12px;font-size:15px">Recent Transactions</h3>
+<div id="adminRecentTxn" style="max-height:400px;overflow-y:auto"></div>
+</div>
+
+<!-- Admin Users -->
+<div class="admin-section" id="adminUsers">
+<input class="search-bar" type="text" placeholder="🔍 Search users by email, name or phone..." id="adminUserSearch" oninput="searchAdminUsers(this.value)">
+<div id="adminUserList" style="max-height:500px;overflow-y:auto"></div>
+</div>
+
+<!-- Admin Pricing -->
+<div class="admin-section" id="adminPricing">
+<p style="color:var(--text2);font-size:13px;margin-bottom:16px">Set selling prices for all services. Buying prices come from ClubKonnect API.</p>
+<div id="adminPricingList"></div>
+<button class="btn btn-primary" onclick="saveAdminPricing()" style="margin-top:16px">💾 Save All Prices</button>
+</div>
+
+<!-- Admin API Config -->
+<div class="admin-section" id="adminApiconfig">
+<div class="input-group"><label>ClubKonnect UserID</label><input type="text" id="ckUserID" placeholder="e.g CK10152152"></div>
+<div class="input-group"><label>ClubKonnect API Key</label><input type="text" id="ckAPIKey" placeholder="Enter API Key"></div>
+<div class="input-group"><label>Paystack Public Key</label><input type="text" id="psPublicKey" placeholder="pk_live_..."></div>
+<div class="input-group"><label>Paystack Secret Key</label><input type="text" id="psSecretKey" placeholder="sk_live_..."></div>
+<div class="input-group"><label>WhatsApp Support Number</label><input type="tel" id="waNumber" placeholder="e.g 2348012345678"></div>
+<div class="input-group"><label>Website Name</label><input type="text" id="siteName" placeholder="DataPlug"></div>
+<button class="btn btn-primary" onclick="saveAPIConfig()">💾 Save Configuration</button>
+</div>
+
+<!-- Admin Settings -->
+<div class="admin-section" id="adminSettings">
+<div class="input-group"><label>Referral Bonus per Referral (₦)</label><input type="number" id="adminRefBonus" value="100"></div>
+<div class="input-group"><label>Minimum Wallet Fund (₦)</label><input type="number" id="adminMinFund" value="100"></div>
+<button class="btn btn-primary" onclick="saveAdminSettings()">💾 Save Settings</button>
+</div>
+
+<!-- Admin Fund User -->
+<div class="admin-section" id="adminFunduser">
+<div class="input-group"><label>User Email</label><input type="email" id="fundUserEmail" placeholder="user@email.com"></div>
+<div class="input-group"><label>Amount (₦)</label><input type="number" id="fundUserAmount" placeholder="1000"></div>
+<div class="input-group"><label>Action</label><select id="fundUserAction"><option value="credit">Credit (Add)</option><option value="debit">Debit (Remove)</option></select></div>
+<div class="input-group"><label>Reason</label><input type="text" id="fundUserReason" placeholder="e.g Manual funding, Refund, etc"></div>
+<button class="btn btn-primary" onclick="adminFundUser()">Execute</button>
+</div>
+</div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+<div class="nav-item active" onclick="showPage('home')"><span class="nav-icon">🏠</span>Home</div>
+<div class="nav-item" onclick="showServicePage('data')"><span class="nav-icon">📶</span>Data</div>
+<div class="nav-item" onclick="showServicePage('airtime')"><span class="nav-icon">📱</span>Airtime</div>
+<div class="nav-item" onclick="showPage('transactions')"><span class="nav-icon">📋</span>History</div>
+<div class="nav-item" onclick="showPage('more')"><span class="nav-icon">⚙️</span>More</div>
+</div>
+</div>
+
+<!-- FUND WALLET MODAL -->
+<div class="modal-overlay" id="fundModal">
+<div class="modal" style="position:relative">
+<span class="close-modal" onclick="closeFundModal()">✕</span>
+<h2>💳 Fund Wallet</h2>
+<div class="input-group"><label>Amount (₦)</label><input type="number" id="fundAmount" placeholder="e.g 1000" min="100"></div>
+<button class="btn btn-primary" onclick="initPayment()">Pay with Paystack</button>
+</div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div class="modal-overlay" id="receiptModal">
+<div class="modal" style="position:relative">
+<span class="close-modal" onclick="closeReceiptModal()">✕</span>
+<div id="receiptContent"></div>
+</div>
+</div>
+
+<!-- ADMIN AUTH MODAL -->
+<div class="modal-overlay" id="adminAuthModal">
+<div class="modal" style="position:relative">
+<span class="close-modal" onclick="document.getElementById('adminAuthModal').classList.remove('active')">✕</span>
+<h2>🔐 Admin Access</h2>
+<div class="input-group">
+<label>Enter Admin Password</label>
+<div class="password-wrapper">
+<input type="password" id="adminPwInput" placeholder="Enter password">
+<button class="toggle-pw" onclick="togglePW('adminPwInput',this)">👁️</button>
+</div>
+</div>
+<button class="btn btn-primary" onclick="verifyAdminPassword()">Access Dashboard</button>
+</div>
+</div>
+
+<script>
+/* ===================================================
+   CONFIGURATION - REPLACE THESE WITH YOUR ACTUAL KEYS
+   =================================================== */
+const CONFIG = {
+  API_URL: 'https://script.google.com/macros/s/AKfycbw9Ic3ajmFWXaG-qY4K2xn_21AslznQyjws1dM0xtLIaunQVBFlO5uTn856peS-OA/exec', // Replace after deploying Code.gs
+  PAYSTACK_KEY: 'pk_live_83506f8c09aa5d5ef58cfd7a288c8332e0fb05b9', // Replace with your Paystack public key
+  WHATSAPP: '2348012345678', // Replace with your WhatsApp number
+  SITE_NAME: 'DataPlug',
+  ADMIN_PASSWORD: '1234567890',
+  ADMIN_CLICK_COUNT: 10,
+  CK_USERID: '', // Will be loaded from admin config
+  CK_APIKEY: '' // Will be loaded from admin config
+};
+
+let currentUser = null;
+let allTransactions = [];
+let balanceHidden = false;
+let brandClickCount = 0;
+let brandClickTimer = null;
+let cachedPlans = { data: null, airtime: null, cable: null, electricity: null };
+
+/* ===== TOAST ===== */
+function showToast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.animation = 'slideOut .3s ease forwards'; setTimeout(() => t.remove(), 300); }, 3500);
+}
+
+function showLoading(text='Processing...') { document.getElementById('loadingText').textContent=text; document.getElementById('loadingOverlay').classList.add('active'); }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+/* ===== API HELPER ===== */
+async function apiCall(action, data={}) {
+  try {
+    const res = await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, ...data })
+    });
+    return await res.json();
+  } catch(e) {
+    console.error('API Error:', e);
+    return { success: false, message: 'Network error. Please try again.' };
+  }
+}
+
+/* ===== AUTH ===== */
+function showLogin() { document.getElementById('loginForm').style.display='block'; document.getElementById('registerForm').style.display='none'; document.getElementById('forgotForm').style.display='none'; }
+function showRegister() { document.getElementById('loginForm').style.display='none'; document.getElementById('registerForm').style.display='block'; document.getElementById('forgotForm').style.display='none'; }
+function showForgotPassword() { document.getElementById('loginForm').style.display='none'; document.getElementById('registerForm').style.display='none'; document.getElementById('forgotForm').style.display='block'; }
+function togglePW(id,btn) { const i=document.getElementById(id); i.type=i.type==='password'?'text':'password'; btn.textContent=i.type==='password'?'👁️':'🙈'; }
+
+async function handleRegister() {
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim();
+  const phone=document.getElementById('regPhone').value.trim();
+  const pw=document.getElementById('regPassword').value;
+  const ref=document.getElementById('regReferral').value.trim();
+  if(!name||!email||!phone||!pw) return showToast('Please fill all required fields','error');
+  if(pw.length<6) return showToast('Password must be at least 6 characters','error');
+  if(!email.includes('@')) return showToast('Please enter a valid email','error');
+  const btn=document.getElementById('regBtn'); btn.disabled=true; btn.innerHTML='<div class="spinner"></div>';
+  const res=await apiCall('register',{name,email,phone,password:pw,referral:ref});
+  btn.disabled=false; btn.textContent='Create Account';
+  if(res.success){showToast('Account created successfully!','success');showLogin();}else{showToast(res.message||'Registration failed','error');}
+}
+
+async function handleLogin() {
+  const email=document.getElementById('loginEmail').value.trim();
+  const pw=document.getElementById('loginPassword').value;
+  if(!email||!pw) return showToast('Please fill all fields','error');
+  const btn=document.getElementById('loginBtn'); btn.disabled=true; btn.innerHTML='<div class="spinner"></div>';
+  const res=await apiCall('login',{email,password:pw});
+  btn.disabled=false; btn.textContent='Sign In';
+  if(res.success){currentUser=res.user;localStorage.setItem('dp_user',JSON.stringify(res.user));showToast('Welcome back!','success');enterApp();}
+  else{showToast(res.message||'Login failed','error');}
+}
+
+async function handleForgotPassword() {
+  const email=document.getElementById('forgotEmail').value.trim();
+  if(!email) return showToast('Enter your email','error');
+  showLoading('Sending reset link...');
+  const res=await apiCall('forgotPassword',{email});
+  hideLoading();
+  if(res.success)showToast('New password sent to your email','success');
+  else showToast(res.message||'Failed','error');
+}
+
+function handleLogout() { currentUser=null; localStorage.removeItem('dp_user'); document.getElementById('appContainer').style.display='none'; document.getElementById('authPage').style.display='flex'; showToast('Logged out','info'); }
+
+/* ===== APP ENTRY ===== */
+function enterApp() {
+  document.getElementById('authPage').style.display='none';
+  document.getElementById('appContainer').style.display='block';
+  document.getElementById('userAvatar').textContent=currentUser.name.charAt(0).toUpperCase();
+  updateBalance();
+  loadTransactions();
+  loadAllNetworks();
+  loadSiteConfig();
+}
+
+function updateBalance() {
+  const el=document.getElementById('walletBalance');
+  if(balanceHidden) el.textContent='₦****';
+  else el.textContent='₦'+Number(currentUser.balance||0).toLocaleString('en-NG',{minimumFractionDigits:2});
+}
+
+function toggleBalance() { balanceHidden=!balanceHidden; updateBalance(); }
+
+async function refreshUser() {
+  const res=await apiCall('getUser',{email:currentUser.email});
+  if(res.success){currentUser=res.user;localStorage.setItem('dp_user',JSON.stringify(res.user));updateBalance();}
+}
+
+/* ===== NAVIGATION ===== */
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=document.getElementById(pageId+'Page');
+  if(pg)pg.classList.add('active');
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.remove('active'));
+  if(pageId==='home')document.querySelector('.bottom-nav .nav-item:nth-child(1)').classList.add('active');
+  if(pageId==='transactions')document.querySelector('.bottom-nav .nav-item:nth-child(4)').classList.add('active');
+  if(pageId==='more')document.querySelector('.bottom-nav .nav-item:nth-child(5)').classList.add('active');
+}
+
+function showServicePage(type) {
+  showPage(type);
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.remove('active'));
+  if(type==='data')document.querySelector('.bottom-nav .nav-item:nth-child(2)').classList.add('active');
+  if(type==='airtime')document.querySelector('.bottom-nav .nav-item:nth-child(3)').classList.add('active');
+}
+
+/* ===== ADMIN ACCESS (Secret 10-click) ===== */
+document.getElementById('appBrand').addEventListener('click', () => {
+  brandClickCount++;
+  clearTimeout(brandClickTimer);
+  brandClickTimer = setTimeout(() => { brandClickCount = 0; }, 3000);
+  if (brandClickCount >= CONFIG.ADMIN_CLICK_COUNT) {
+    brandClickCount = 0;
+    document.getElementById('adminAuthModal').classList.add('active');
+  }
+});
+document.getElementById('authLogo').addEventListener('click', () => {
+  brandClickCount++;
+  clearTimeout(brandClickTimer);
+  brandClickTimer = setTimeout(() => { brandClickCount = 0; }, 3000);
+  if (brandClickCount >= CONFIG.ADMIN_CLICK_COUNT) {
+    brandClickCount = 0;
+    document.getElementById('adminAuthModal').classList.add('active');
+  }
+});
+
+function verifyAdminPassword() {
+  const pw = document.getElementById('adminPwInput').value;
+  if (pw === CONFIG.ADMIN_PASSWORD) {
+    document.getElementById('adminAuthModal').classList.remove('active');
+    document.getElementById('adminPwInput').value = '';
+    showPage('admin');
+    loadAdminData();
+    showToast('Welcome Admin!', 'success');
+  } else {
+    showToast('Wrong password', 'error');
+  }
+}
+
+function showAdminTab(tabId) {
+  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.admin-tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('admin' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).classList.add('active');
+  event.target.classList.add('active');
+}
+
+async function loadAdminData() {
+  const res = await apiCall('adminGetStats', { email: currentUser.email });
+  if (res.success) {
+    document.getElementById('adminTotalUsers').textContent = res.stats.totalUsers;
+    document.getElementById('adminRevenue').textContent = '₦' + Number(res.stats.totalRevenue).toLocaleString();
+    document.getElementById('adminTodaySales').textContent = '₦' + Number(res.stats.todaySales).toLocaleString();
+    document.getElementById('adminActiveUsers').textContent = res.stats.activeUsers;
+    renderAdminTxns(res.stats.recentTransactions || []);
+    renderAdminUsers(res.stats.users || []);
+    renderAdminPricing(res.stats.pricing || {});
+    if (res.stats.config) {
+      document.getElementById('ckUserID').value = res.stats.config.ckUserID || '';
+      document.getElementById('ckAPIKey').value = res.stats.config.ckAPIKey || '';
+      document.getElementById('psPublicKey').value = res.stats.config.psPublicKey || '';
+      document.getElementById('psSecretKey').value = res.stats.config.psSecretKey || '';
+      document.getElementById('waNumber').value = res.stats.config.waNumber || '';
+      document.getElementById('siteName').value = res.stats.config.siteName || '';
+    }
+    if (res.stats.settings) {
+      document.getElementById('adminRefBonus').value = res.stats.settings.refBonus || 100;
+      document.getElementById('adminMinFund').value = res.stats.settings.minFund || 100;
+    }
+  }
+}
+
+function renderAdminTxns(txns) {
+  const c = document.getElementById('adminRecentTxn');
+  if (!txns.length) { c.innerHTML = '<div class="empty-state"><p>No transactions</p></div>'; return; }
+  c.innerHTML = txns.slice(0, 50).map(t => `
+    <div class="txn-item">
+      <div class="txn-icon ${t.status === 'success' ? 'success' : t.status === 'failed' ? 'failed' : 'pending'}">
+        ${t.status === 'success' ? '✅' : t.status === 'failed' ? '❌' : '⏳'}
+      </div>
+      <div class="txn-info">
+        <div class="txn-title">${t.type} - ${t.description || ''}</div>
+        <div class="txn-date">${t.email} · ${t.date || ''}</div>
+      </div>
+      <div class="txn-amount ${t.type === 'credit' || t.type === 'funding' ? 'credit' : 'debit'}">₦${Number(t.amount).toLocaleString()}</div>
+    </div>
+  `).join('');
+}
+
+function renderAdminUsers(users) {
+  const c = document.getElementById('adminUserList');
+  window._adminUsers = users;
+  renderUserRows(users);
+}
+
+function renderUserRows(users) {
+  const c = document.getElementById('adminUserList');
+  c.innerHTML = users.map(u => `
+    <div class="txn-item" style="flex-wrap:wrap;gap:8px">
+      <div class="txn-icon" style="background:rgba(108,99,255,0.15)">${u.name ? u.name.charAt(0).toUpperCase() : 'U'}</div>
+      <div class="txn-info" style="flex:1;min-width:150px">
+        <div class="txn-title">${u.name}</div>
+        <div class="txn-date">${u.email} · ${u.phone}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span class="badge ${u.status === 'active' ? 'badge-success' : 'badge-danger'}">${u.status || 'active'}</span>
+        <span style="font-weight:600;font-size:13px">₦${Number(u.balance || 0).toLocaleString()}</span>
+        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('fundUserEmail').value='${u.email}';showAdminTab('funduser')">💳</button>
+        <button class="btn btn-sm ${u.status==='blocked'?'btn-success':'btn-danger'}" onclick="toggleUserStatus('${u.email}','${u.status}')">${u.status==='blocked'?'Activate':'Block'}</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function searchAdminUsers(q) {
+  if (!window._adminUsers) return;
+  const filtered = window._adminUsers.filter(u =>
+    (u.name || '').toLowerCase().includes(q.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(q.toLowerCase()) ||
+    (u.phone || '').includes(q)
+  );
+  renderUserRows(filtered);
+}
+
+async function toggleUserStatus(email, currentStatus) {
+  const newStatus = currentStatus === 'blocked' ? 'active' : 'blocked';
+  showLoading();
+  const res = await apiCall('adminToggleUser', { adminEmail: currentUser.email, userEmail: email, status: newStatus });
+  hideLoading();
+  if (res.success) { showToast(`User ${newStatus}`, 'success'); loadAdminData(); }
+  else showToast(res.message || 'Failed', 'error');
+}
+
+function renderAdminPricing(pricing) {
+  const c = document.getElementById('adminPricingList');
+  const services = ['data', 'airtime', 'cable', 'electricity', 'epin'];
+  let html = '';
+  services.forEach(s => {
+    html += `<h3 style="margin:16px 0 8px;font-size:15px;text-transform:capitalize">${s}</h3>`;
+    const items = pricing[s] || [];
+    if (items.length) {
+      html += items.map((item, i) => `
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <span style="flex:1;min-width:120px;font-size:13px">${item.name || item.planId || 'Item'} (Cost: ₦${item.costPrice || 0})</span>
+          <input type="number" style="width:100px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px" value="${item.sellPrice || 0}" data-service="${s}" data-index="${i}" class="pricing-input">
+        </div>
+      `).join('');
+    } else {
+      html += '<p style="font-size:13px;color:var(--text2)">No items configured. Load plans from API first.</p>';
+    }
+  });
+  c.innerHTML = html;
+}
+
+async function saveAdminPricing() {
+  const inputs = document.querySelectorAll('.pricing-input');
+  const pricing = {};
+  inputs.forEach(inp => {
+    const s = inp.dataset.service;
+    const i = parseInt(inp.dataset.index);
+    if (!pricing[s]) pricing[s] = [];
+    pricing[s].push({ index: i, sellPrice: parseFloat(inp.value) || 0 });
+  });
+  showLoading('Saving prices...');
+  const res = await apiCall('adminSavePricing', { email: currentUser.email, pricing });
+  hideLoading();
+  if (res.success) showToast('Prices saved!', 'success');
+  else showToast(res.message || 'Failed', 'error');
+}
+
+async function saveAPIConfig() {
+  const config = {
+    ckUserID: document.getElementById('ckUserID').value,
+    ckAPIKey: document.getElementById('ckAPIKey').value,
+    psPublicKey: document.getElementById('psPublicKey').value,
+    psSecretKey: document.getElementById('psSecretKey').value,
+    waNumber: document.getElementById('waNumber').value,
+    siteName: document.getElementById('siteName').value
+  };
+  showLoading('Saving...');
+  const res = await apiCall('adminSaveConfig', { email: currentUser.email, config });
+  hideLoading();
+  if (res.success) { showToast('Config saved!', 'success'); loadSiteConfig(); }
+  else showToast(res.message || 'Failed', 'error');
+}
+
+async function saveAdminSettings() {
+  const settings = {
+    refBonus: parseInt(document.getElementById('adminRefBonus').value) || 100,
+    minFund: parseInt(document.getElementById('adminMinFund').value) || 100
+  };
+  showLoading();
+  const res = await apiCall('adminSaveSettings', { email: currentUser.email, settings });
+  hideLoading();
+  if (res.success) showToast('Settings saved!', 'success');
+  else showToast(res.message || 'Failed', 'error');
+}
+
+async function adminFundUser() {
+  const email = document.getElementById('fundUserEmail').value.trim();
+  const amount = parseFloat(document.getElementById('fundUserAmount').value);
+  const action = document.getElementById('fundUserAction').value;
+  const reason = document.getElementById('fundUserReason').value.trim();
+  if (!email || !amount) return showToast('Fill all fields', 'error');
+  showLoading();
+  const res = await apiCall('adminFundUser', { adminEmail: currentUser.email, userEmail: email, amount, fundAction: action, reason });
+  hideLoading();
+  if (res.success) { showToast(`₦${amount} ${action}ed to ${email}`, 'success'); loadAdminData(); }
+  else showToast(res.message || 'Failed', 'error');
+}
+
+/* ===== LOAD SITE CONFIG ===== */
+async function loadSiteConfig() {
+  const res = await apiCall('getSiteConfig');
+  if (res.success && res.config) {
+    if (res.config.siteName) {
+      CONFIG.SITE_NAME = res.config.siteName;
+      document.querySelectorAll('.brand').forEach(el => el.innerHTML = '⚡ ' + res.config.siteName);
+      document.getElementById('authLogo').innerHTML = '⚡ ' + res.config.siteName;
+      document.title = res.config.siteName + ' - Instant VTU Services';
+    }
+    if (res.config.psPublicKey) CONFIG.PAYSTACK_KEY = res.config.psPublicKey;
+    if (res.config.waNumber) CONFIG.WHATSAPP = res.config.waNumber;
+    if (res.config.ckUserID) CONFIG.CK_USERID = res.config.ckUserID;
+    if (res.config.ckAPIKey) CONFIG.CK_APIKEY = res.config.ckAPIKey;
+  }
+}
+
+/* ===== FUND WALLET ===== */
+function showFundWallet() { document.getElementById('fundModal').classList.add('active'); }
+function closeFundModal() { document.getElementById('fundModal').classList.remove('active'); }
+
+function initPayment() {
+  const amount = parseFloat(document.getElementById('fundAmount').value);
+  if (!amount || amount < 100) return showToast('Minimum funding is ₦100', 'error');
+  closeFundModal();
+  let handler = PaystackPop.setup({
+    key: CONFIG.PAYSTACK_KEY,
+    email: currentUser.email,
+    amount: amount * 100,
+    currency: 'NGN',
+    ref: 'DP_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    callback: async function(response) {
+      showLoading('Verifying payment...');
+      const res = await apiCall('fundWallet', { email: currentUser.email, amount, reference: response.reference });
+      hideLoading();
+      if (res.success) {
+        currentUser.balance = (parseFloat(currentUser.balance) || 0) + amount;
+        updateBalance();
+        showToast('Wallet funded with ₦' + amount.toLocaleString(), 'success');
+        loadTransactions();
+      } else {
+        showToast(res.message || 'Funding failed. Contact support.', 'error');
+      }
+    },
+    onClose: function() { showToast('Payment cancelled', 'info'); }
+  });
+  handler.openIframe();
+}
+
+/* ===== LOAD NETWORKS & PLANS ===== */
+async function loadAllNetworks() {
+  const res = await apiCall('getPlans');
+  if (res.success) {
+    cachedPlans = res.plans;
+    populateNetworks('dataNetwork', res.plans.dataNetworks || []);
+    populateNetworks('airtimeNetwork', res.plans.airtimeNetworks || []);
+    populateNetworks('cableProvider', res.plans.cableTypes || []);
+    populateNetworks('elecDisco', res.plans.electricityDiscos || []);
+  }
+}
+
+function populateNetworks(selectId, networks) {
+  const sel = document.getElementById(selectId);
+  const first = sel.options[0];
+  sel.innerHTML = '';
+  sel.appendChild(first);
+  networks.forEach(n => {
+    const opt = document.createElement('option');
+    opt.value = n.id || n.ID || n.value;
+    opt.textContent = n.name || n.Name || n.label;
+    sel.appendChild(opt);
+  });
+}
+
+function loadDataPlans() {
+  const netId = document.getElementById('dataNetwork').value;
+  const sel = document.getElementById('dataPlan');
+  sel.innerHTML = '<option value="">Select Plan</option>';
+  document.getElementById('dataAmount').value = '';
+  if (!netId || !cachedPlans.dataPlans) return;
+  const plans = cachedPlans.dataPlans.filter(p => (p.networkId || p.network) == netId);
+  plans.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.planId || p.id;
+    opt.textContent = p.name || p.planName;
+    opt.dataset.price = p.sellPrice || p.price || 0;
+    sel.appendChild(opt);
+  });
+  sel.onchange = () => {
+    const selected = sel.options[sel.selectedIndex];
+    document.getElementById('dataAmount').value = selected.dataset.price || '';
+  };
+}
+
+function loadCablePackages() {
+  const typeId = document.getElementById('cableProvider').value;
+  const sel = document.getElementById('cablePackage');
+  sel.innerHTML = '<option value="">Select Package</option>';
+  document.getElementById('cableAmount').value = '';
+  if (!typeId || !cachedPlans.cablePackages) return;
+  const pkgs = cachedPlans.cablePackages.filter(p => (p.cableTvId || p.typeId) == typeId);
+  pkgs.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.packageId || p.id;
+    opt.textContent = p.name || p.packageName;
+    opt.dataset.price = p.sellPrice || p.price || 0;
+    sel.appendChild(opt);
+  });
+  sel.onchange = () => {
+    const selected = sel.options[sel.selectedIndex];
+    document.getElementById('cableAmount').value = selected.dataset.price || '';
+  };
+}
+
+async function loadNetworksFromAPI(type) {
+  showLoading('Loading from ClubKonnect API...');
+  const res = await apiCall('loadFromCKAPI', { type, email: currentUser.email });
+  hideLoading();
+  if (res.success) {
+    showToast('Plans loaded from API!', 'success');
+    loadAllNetworks();
+  } else {
+    showToast(res.message || 'Failed to load from API', 'error');
+  }
+}
+
+/* ===== PURCHASE SERVICES ===== */
+async function buyData() {
+  const network = document.getElementById('dataNetwork').value;
+  const plan = document.getElementById('dataPlan').value;
+  const phone = document.getElementById('dataPhone').value.trim();
+  const amount = parseFloat(document.getElementById('dataAmount').value);
+  if (!network || !plan || !phone || !amount) return showToast('Fill all fields', 'error');
+  if (amount > (currentUser.balance || 0)) return showToast('Insufficient balance. Fund your wallet.', 'error');
+  const btn = document.getElementById('buyDataBtn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  const res = await apiCall('buyData', { email: currentUser.email, network, plan, phone, amount });
+  btn.disabled = false; btn.textContent = 'Buy Data';
+  if (res.success) {
+    showToast('Data purchase successful!', 'success');
+    refreshUser(); loadTransactions();
+    showReceipt({ type: 'Data Bundle', phone, amount, status: 'Success', ref: res.orderId || '', date: new Date().toLocaleString() });
+  } else {
+    showToast(res.message || 'Transaction failed', 'error');
+    if (res.refunded) showToast('₦' + amount + ' refunded to wallet', 'info');
+    refreshUser();
+  }
+}
+
+async function buyAirtime() {
+  const network = document.getElementById('airtimeNetwork').value;
+  const phone = document.getElementById('airtimePhone').value.trim();
+  const amount = parseFloat(document.getElementById('airtimeAmount').value);
+  if (!network || !phone || !amount) return showToast('Fill all fields', 'error');
+  if (amount > (currentUser.balance || 0)) return showToast('Insufficient balance', 'error');
+  const btn = document.getElementById('buyAirtimeBtn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  const res = await apiCall('buyAirtime', { email: currentUser.email, network, phone, amount });
+  btn.disabled = false; btn.textContent = 'Buy Airtime';
+  if (res.success) {
+    showToast('Airtime purchase successful!', 'success');
+    refreshUser(); loadTransactions();
+    showReceipt({ type: 'Airtime', phone, amount, status: 'Success', ref: res.orderId || '', date: new Date().toLocaleString() });
+  } else {
+    showToast(res.message || 'Failed', 'error');
+    if (res.refunded) showToast('₦' + amount + ' refunded', 'info');
+    refreshUser();
+  }
+}
+
+async function buyCable() {
+  const provider = document.getElementById('cableProvider').value;
+  const pkg = document.getElementById('cablePackage').value;
+  const smartCard = document.getElementById('cableSmartCard').value.trim();
+  const amount = parseFloat(document.getElementById('cableAmount').value);
+  if (!provider || !pkg || !smartCard || !amount) return showToast('Fill all fields', 'error');
+  if (amount > (currentUser.balance || 0)) return showToast('Insufficient balance', 'error');
+  const btn = document.getElementById('buyCableBtn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  const res = await apiCall('buyCable', { email: currentUser.email, provider, package: pkg, smartCard, amount });
+  btn.disabled = false; btn.textContent = 'Subscribe Now';
+  if (res.success) {
+    showToast('Subscription successful!', 'success');
+    refreshUser(); loadTransactions();
+    showReceipt({ type: 'Cable TV', smartCard, amount, status: 'Success', ref: res.orderId || '', date: new Date().toLocaleString() });
+  } else {
+    showToast(res.message || 'Failed', 'error');
+    if (res.refunded) showToast('₦' + amount + ' refunded', 'info');
+    refreshUser();
+  }
+}
+
+async function buyElectricity() {
+  const disco = document.getElementById('elecDisco').value;
+  const meterType = document.getElementById('elecMeterType').value;
+  const meterNo = document.getElementById('elecMeterNo').value.trim();
+  const amount = parseFloat(document.getElementById('elecAmount').value);
+  if (!disco || !meterNo || !amount) return showToast('Fill all fields', 'error');
+  if (amount > (currentUser.balance || 0)) return showToast('Insufficient balance', 'error');
+  const btn = document.getElementById('buyElecBtn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  const res = await apiCall('buyElectricity', { email: currentUser.email, disco, meterType, meterNo, amount });
+  btn.disabled = false; btn.textContent = 'Pay Now';
+  if (res.success) {
+    showToast('Electricity token purchased!', 'success');
+    refreshUser(); loadTransactions();
+    let tokenInfo = res.token ? `Token: ${res.token}` : '';
+    showReceipt({ type: 'Electricity', meterNo, amount, status: 'Success', ref: res.orderId || '', token: res.token || 'N/A', date: new Date().toLocaleString() });
+  } else {
+    showToast(res.message || 'Failed', 'error');
+    if (res.refunded) showToast('₦' + amount + ' refunded', 'info');
+    refreshUser();
+  }
+}
+
+/* ===== E-PIN GENERATOR ===== */
+async function generateEPIN() {
+  const network = document.getElementById('epinNetwork').value;
+  const value = document.getElementById('epinValue').value;
+  const qty = parseInt(document.getElementById('epinQty').value);
+  const brand = document.getElementById('epinBrand').value.trim() || CONFIG.SITE_NAME;
+  if (!network || !value || !qty) return showToast('Fill all fields', 'error');
+  const totalCost = qty * parseFloat(value);
+  if (totalCost > (currentUser.balance || 0)) return showToast('Insufficient balance. Need ₦' + totalCost.toLocaleString(), 'error');
+  const btn = document.getElementById('epinBtn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  const res = await apiCall('buyEPIN', { email: currentUser.email, network, value, quantity: qty });
+  btn.disabled = false; btn.textContent = 'Generate & Print';
+  if (res.success && res.pins) {
+    refreshUser(); loadTransactions();
+    renderVouchers(res.pins, network, value, brand);
+    showToast('PINs generated successfully!', 'success');
+  } else {
+    showToast(res.message || 'Failed to generate PINs', 'error');
+    if (res.refunded) showToast('Amount refunded', 'info');
+    refreshUser();
+  }
+}
+
+function renderVouchers(pins, network, value, brand) {
+  const netNames = { '01': 'MTN', '02': 'GLO', '04': 'Airtel' };
+  const dialCodes = { '01': '*555*PIN#', '02': '*123*PIN#', '04': '*126*PIN#' };
+  const netName = netNames[network] || 'Network';
+  const dialCode = dialCodes[network] || '*PIN#';
+  const container = document.getElementById('epinResults');
+  let html = `<div class="voucher-preview" id="voucherPreview">
+    <h3 style="text-align:center;color:#333;margin-bottom:16px">${brand} - Recharge Vouchers</h3>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center">`;
+  pins.forEach((pin, i) => {
+    html += `<div class="voucher-card">
+      <div class="v-network">${netName}</div>
+      <div class="v-value">₦${value} Recharge Card</div>
+      <div class="v-pin">${pin.pin || pin}</div>
+      <div class="v-serial">S/N: ${pin.serial || (i + 1)}</div>
+      <div class="v-dial">To Load: ${dialCode.replace('PIN', (pin.pin || pin))}</div>
+      <div class="v-brand">${brand}</div>
+    </div>`;
+  });
+  html += `</div></div>
+    <button class="btn btn-primary" onclick="downloadVoucherPDF()" style="margin-top:12px">📥 Download as PDF</button>`;
+  container.innerHTML = html;
+}
+
+function downloadVoucherPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const preview = document.getElementById('voucherPreview');
+  if (!preview) return showToast('No vouchers to download', 'error');
+  const cards = preview.querySelectorAll('.voucher-card');
+  const brand = preview.querySelector('h3').textContent;
+  doc.setFontSize(16);
+  doc.text(brand, 105, 15, { align: 'center' });
+  doc.setFontSize(10);
+  doc.text('Generated on: ' + new Date().toLocaleString(), 105, 22, { align: 'center' });
+  let y = 30; let x = 10; let col = 0;
+  const cardW = 90; const cardH = 40;
+  cards.forEach((card, i) => {
+    if (y + cardH > 280) { doc.addPage(); y = 15; }
+    doc.setDrawColor(100);
+    doc.setLineDash([2, 2], 0);
+    doc.rect(x, y, cardW, cardH);
+    doc.setLineDash([]);
+    const net = card.querySelector('.v-network').textContent;
+    const val = card.querySelector('.v-value').textContent;
+    const pin = card.querySelector('.v-pin').textContent;
+    const serial = card.querySelector('.v-serial').textContent;
+    const dial = card.querySelector('.v-dial').textContent;
+    const brd = card.querySelector('.v-brand').textContent;
+    doc.setFontSize(12); doc.setFont(undefined, 'bold');
+    doc.text(net, x + cardW / 2, y + 8, { align: 'center' });
+    doc.setFontSize(9); doc.setFont(undefined, 'normal');
+    doc.text(val, x + cardW / 2, y + 14, { align: 'center' });
+    doc.setFontSize(14); doc.setFont(undefined, 'bold');
+    doc.text(pin, x + cardW / 2, y + 22, { align: 'center' });
+    doc.setFontSize(7); doc.setFont(undefined, 'normal');
+    doc.text(serial, x + cardW / 2, y + 28, { align: 'center' });
+    doc.text(dial, x + cardW / 2, y + 33, { align: 'center' });
+    doc.setFontSize(6);
+    doc.text(brd, x + cardW / 2, y + 38, { align: 'center' });
+    if (col === 0) { x = 110; col = 1; }
+    else { x = 10; col = 0; y += cardH + 5; }
+  });
+  doc.save('Vouchers_' + Date.now() + '.pdf');
+  showToast('PDF downloaded!', 'success');
+}
+
+/* ===== TRANSACTIONS ===== */
+async function loadTransactions() {
+  const res = await apiCall('getTransactions', { email: currentUser.email });
+  if (res.success) {
+    allTransactions = res.transactions || [];
+    renderRecentTxns();
+    renderAllTxns(allTransactions);
+  }
+}
+
+function renderRecentTxns() {
+  const c = document.getElementById('recentTxns');
+  const recent = allTransactions.slice(0, 5);
+  if (!recent.length) { c.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No recent transactions</p></div>'; return; }
+  c.innerHTML = recent.map(t => txnHTML(t)).join('');
+}
+
+function renderAllTxns(txns) {
+  const c = document.getElementById('allTxnList');
+  if (!txns.length) { c.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No transactions</p></div>'; return; }
+  c.innerHTML = txns.map(t => `<div onclick='showReceiptFromTxn(${JSON.stringify(t).replace(/'/g, "\\'")})'>${txnHTML(t)}</div>`).join('');
+}
+
+function txnHTML(t) {
+  const icons = { data: '📶', airtime: '📱', cable: '📺', electricity: '💡', funding: '💳', epin: '🖨️', credit: '💰', debit: '💸', referral: '👥' };
+  const icon = icons[t.type] || '📋';
+  const statusClass = t.status === 'success' ? 'success' : t.status === 'failed' ? 'failed' : 'pending';
+  const amountClass = (t.type === 'funding' || t.type === 'credit' || t.type === 'referral') ? 'credit' : 'debit';
+  const prefix = amountClass === 'credit' ? '+' : '-';
+  return `<div class="txn-item" style="cursor:pointer">
+    <div class="txn-icon ${statusClass}">${icon}</div>
+    <div class="txn-info"><div class="txn-title">${t.description || t.type}</div><div class="txn-date">${t.date || ''}</div></div>
+    <div class="txn-amount ${amountClass}">${prefix}₦${Number(t.amount || 0).toLocaleString()}</div>
+  </div>`;
+}
+
+function filterTransactions(q) {
+  if (!q) { renderAllTxns(allTransactions); return; }
+  const filtered = allTransactions.filter(t =>
+    (t.description || '').toLowerCase().includes(q.toLowerCase()) ||
+    (t.type || '').toLowerCase().includes(q.toLowerCase()) ||
+    (t.status || '').toLowerCase().includes(q.toLowerCase())
+  );
+  renderAllTxns(filtered);
+}
+
+/* ===== RECEIPT ===== */
+function showReceipt(data) {
+  const c = document.getElementById('receiptContent');
+  let rows = '';
+  Object.entries(data).forEach(([k, v]) => {
+    if (v && k !== 'undefined') rows += `<div class="receipt-row"><span>${k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}</span><strong>${v}</strong></div>`;
+  });
+  c.innerHTML = `<div class="receipt"><h3>⚡ ${CONFIG.SITE_NAME}</h3><p style="text-align:center;font-size:12px;color:#999;margin-bottom:16px">Transaction Receipt</p>${rows}<div style="text-align:center;margin-top:16px;padding-top:12px;border-top:2px dashed #ddd"><p style="font-size:11px;color:#999">Thank you for choosing ${CONFIG.SITE_NAME}</p></div></div>`;
+  document.getElementById('receiptModal').classList.add('active');
+}
+function closeReceiptModal() { document.getElementById('receiptModal').classList.remove('active'); }
+function showReceiptFromTxn(t) { showReceipt({ Type: t.type, Description: t.description, Amount: '₦' + Number(t.amount).toLocaleString(), Status: t.status, Reference: t.reference || t.orderId || 'N/A', Date: t.date }); }
+
+/* ===== REFERRAL ===== */
+function copyReferralCode() {
+  const code = document.getElementById('myReferralCode').textContent;
+  if (code && code !== '---') {
+    navigator.clipboard.writeText(code).then(() => showToast('Referral code copied!', 'success'));
+  }
+}
+
+async function loadReferralInfo() {
+  const res = await apiCall('getReferralInfo', { email: currentUser.email });
+  if (res.success) {
+    document.getElementById('myReferralCode').textContent = res.referralCode || '---';
+    document.getElementById('totalReferrals').textContent = res.totalReferrals || 0;
+    document.getElementById('referralBonus').textContent = '₦' + (res.bonusEarned || 0);
+    document.getElementById('referralPoints').textContent = '₦' + (res.pointsPerReferral || 0);
+  }
+}
+
+/* ===== WHATSAPP ===== */
+function openWhatsApp() { window.open('https://wa.me/' + CONFIG.WHATSAPP + '?text=Hello, I need help with my DataPlug account.', '_blank'); }
+
+/* ===== PROFILE MENU ===== */
+function showProfileMenu() {
+  showReceipt({
+    Name: currentUser.name,
+    Email: currentUser.email,
+    Phone: currentUser.phone,
+    'Wallet Balance': '₦' + Number(currentUser.balance || 0).toLocaleString(),
+    'Member Since': currentUser.joinDate || 'N/A'
+  });
+}
+
+/* ===== INIT ===== */
+(async function init() {
+  const saved = localStorage.getItem('dp_user');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      enterApp();
+      refreshUser();
+      loadReferralInfo();
+    } catch(e) { localStorage.removeItem('dp_user'); }
+  }
+  loadSiteConfig();
+})();
+</script>
+</body>
+</html>
